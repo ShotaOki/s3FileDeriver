@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  S3BucketName:
+    Type: String
+  S3FileName:
+    Type: String
+  DeviceCeriticatePolicyName:
+    Type: String
+  S3AccessRoleName:
+    Type: String
+  RoleAliasName:
+    Type: String
+Resources:
+  AssumedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref S3AccessRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - credentials.iot.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub "${S3AccessRoleName}-policy"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "s3:GetObject"
+                Resource: !Sub "arn:aws:s3:::${S3BucketName}${S3FileName}"
+  DeviceCertificatePolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: !Ref DeviceCeriticatePolicyName
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: "iot:AssumeRoleWithCertificate"
+            Resource: !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:rolealias/${RoleAliasName}"
